@@ -1,0 +1,85 @@
+doctype html
+html
+    head
+        meta(charset='UTF-8')
+        meta(name="viewport" content="width=device-width, initial-scale=1")
+        title Compiler command generator
+        link(rel='icon' href='assets/favicon.ico')
+        link(rel='stylesheet' href='css/common.css')
+        link(rel='stylesheet' href='css/index.css')
+    body
+        div#command-output-block
+            p#command-output
+            div#input-errors
+            button#copy-command-output Copia comando
+
+        hr
+
+        form#command-builder-options
+            div Piattaforma:
+                select#platform-selector
+                    option(value='macos') macOS
+                    option(data-non-tested value='linux') Linux e WSL
+                    option(disabled value='windows') Windows
+                p#platform-warning.text-secondary.small ⚠️ Il funzionamento è verificato solo per macOS
+
+            hr
+
+            div
+                input(type='checkbox' checked disabled)#use-compiler
+                label(for='use-compiler') Compiler:
+                    select#compiler-selector
+                        option(value='gcc') GCC
+                        option(disabled value='clang') CLang
+            div
+                input(type='checkbox' checked disabled)#use-source-path
+                label(for='use-source-path') Percorso codice sorgente:
+                    input(type='text' placeholder='relativo a cwd' size=14)#source-path
+            div(data-cli-token='-o')
+                input(type='checkbox')#use-output-path
+                label(for='use-output-path') Percorso eseguibile:
+                    input(type='text' placeholder='relativo a cwd' size=14)#output-path
+            div(data-cli-token='-v')
+                input(type='checkbox')#use-verbose
+                label(for='use-verbose') Output prolisso
+            div(data-cli-token='-std')
+                input(type='checkbox')#use-standard
+                label(for='use-standard') Standard:
+                    select#standard-selector
+                        option(value='c89') C89 (ANSI)
+                        option(value='c90') C90
+                        option(value='c95') C95
+                        option(value='c99') C99
+                        option(value='c11') C11
+                        option(value='c17') C17
+                        option(value='c23') C23
+            div(data-cli-token='-Wall')
+                input(type='checkbox')#use-warning-all
+                label(for='use-warning-all') Visualizza tutti i warning
+            div(data-cli-token='-pedantic')
+                input(type='checkbox')#use-pedantic
+                label(for='use-pedantic') Modalità pedantic
+            div(data-cli-token='-pedantic-errors').depends-on-use-pedantic └─
+                input(type='checkbox')#use-pedantic-errors.depends-on-use-pedantic
+                label(for='use-pedantic-errors').depends-on-use-pedantic (come errori)
+            div
+                input(type='checkbox')#run-binary-after-compiling
+                label(for='run-binary-after-compiling') Esegui dopo la compilazione
+            div(data-cli-token='clear').depends-on-run-binary-after-compiling ├─
+                input(type='checkbox')#clear-screen-before-running
+                label(for='clear-screen-before-running') Pulisci il terminale prima di eseguire
+            div(data-cli-token='rm').depends-on-run-binary-after-compiling └─
+                input(type='checkbox')#delete-binary-after-running
+                label(for='delete-binary-after-running') Rimuovi l'eseguibile dopo l'esecuzione
+
+            hr
+
+            p#update-output-text.button-descriptor L'output non si è aggiornato automaticamente?
+            input(type='submit' value='Aggiorna comando')#update-output-button.text-secondary
+
+
+        br
+        p#copy-c-boilerplate-text.button-descriptor Copia del codice boilerplate per inizializzare un file sorgente
+        button#copy-c-boilerplate Copia boilerplate C
+
+        script(src='js/index.js')

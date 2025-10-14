@@ -1,0 +1,70 @@
+@import url(common);
+
+#command-output-block {
+	display: flex;
+	flex-direction: column;
+}
+#command-output {
+	margin-block: 0;
+	margin-block-end: 8px;
+	min-height: 1em;
+	line-height: 1em;
+	word-break: keep-all;
+	padding-inline: .5em;
+	padding-block: .9em;
+	border-radius: .3em;
+	font-family: monospace;
+	font-size: 1.5em;
+	color: white;
+	background-color: @color-background;
+}
+#command-output::before,
+#command-output::after { color: @color-accent-secondary; }
+#command-output::before { content: 'cwd>' }
+#command-output::after { content: '_'; }
+#command-output.cursor::after { content: '█'; }
+
+form#command-builder-options {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	max-width: 650px;
+	margin-inline: auto;
+}
+form#command-builder-options > :has(input[type='checkbox']:checked)[data-cli-token]::after {
+	margin-inline-start: 8px;
+	font-size: .8em;
+	color: @color-background-light;
+	background-color: @color-background-dark;
+	padding-inline: .25em;
+	border-radius: .3em;
+	content: attr(data-cli-token);
+}
+form#command-builder-options input#source-path:placeholder-shown { border-color: red; border-style: solid }
+form#command-builder-options:has(#use-pedantic:not(:checked)) > .depends-on-use-pedantic,
+form#command-builder-options:has(#run-binary-after-compiling:not(:checked)) > .depends-on-run-binary-after-compiling {
+	opacity: .25;
+	pointer-events: none;
+}
+
+#platform-warning {
+	display: none;
+	margin-block: .5em;
+}
+#platform-selector:has(> option[data-non-tested]:checked) ~ #platform-warning {
+	display: revert;
+}
+
+.button-descriptor {
+	color: white;
+	opacity: .75;
+	font-size: .9em;
+	margin: 0;
+	margin-block-end: .5em;
+}
+#update-output-button {
+	background-color: @color-background-dark;
+}
+#update-output-button:active {
+	background-color: @color-background-light;
+}
