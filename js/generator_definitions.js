@@ -1,18 +1,21 @@
 "use strict";
+// DEFINITIONS
 const compile_command_generator = {
     label: 'Comando di Compilazione',
+    terminal_output: true,
+    copy_button_label: 'Copia comando',
     inputs: [
         {
             id: 'i-platform',
             input_type: "select",
-            options: { 'macOS': 'macos', 'Linux & WSL': 'linux', 'Windows': 'windows' },
+            options: { 'macOS': 'macos', 'Linux & WSL': 'linux', '[DISABLED]Windows': 'windows' },
             label: 'Piattaforma',
             checked: true,
             disabled: true
         }, {
             id: 'i-use-compiler',
             input_type: "select",
-            options: { 'GCC': 'gcc', 'CLang': 'clang' },
+            options: { 'GCC': 'gcc', '[DISABLED]CLang': 'clang' },
             label: 'Compiler',
             checked: true,
             disabled: true
@@ -31,7 +34,8 @@ const compile_command_generator = {
             attributes: { 'placeholder': 'relativo a cwd' }
         }, {
             id: 'i-verbose-output',
-            label: 'Output prolisso'
+            label: 'Output prolisso',
+            token: '-v'
         }, {
             id: 'i-standard',
             input_type: "select",
@@ -46,7 +50,7 @@ const compile_command_generator = {
             id: 'i-pedantic',
             label: 'Modalità pedantic',
             token: '-pedantic',
-            dependants: [{
+            dependents: [{
                     id: 'i-pedantic-errors',
                     label: '(come errori)',
                     token: '-pedantic-errors'
@@ -54,18 +58,136 @@ const compile_command_generator = {
         }, {
             id: 'i-run-after-compiling',
             label: 'Esegui dopo la compilazione',
-            dependants: [{
+            dependents: [{
                     id: 'i-clear-before-running',
-                    label: 'Pulisci il terminale prima di eseguire'
+                    label: 'Pulisci il terminale prima di eseguire',
+                    token: 'clear'
                 }, {
                     id: 'i-delete-after-running',
-                    label: 'Rimuovi l\'eseguibile dopo l\'esecuzione'
+                    label: 'Rimuovi l\'eseguibile dopo l\'esecuzione',
+                    token: 'rm'
                 }]
-        }
+        },
     ],
-    generatorFn: (formValues) => {
-        for (const [k, v] of Object.entries(formValues)) { }
-        return '';
+    generator_fn: formValues => {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        // FORM FEEDBACK
+        const sourcePathCheckbox = formValues['i-source-path'].checkbox;
+        const sourcePathInput = formValues['i-source-path'].input;
+        if (!sourcePathInput.value || sourcePathInput.value === '' || sourcePathInput.value === SOURCE_CODE_EXTENSION) {
+            sourcePathInput.value = '';
+        }
+        else {
+            if (sourcePathInput.value.endsWith(SOURCE_CODE_EXTENSION) && sourcePathInput.value !== SOURCE_CODE_EXTENSION) {
+            }
+            else {
+                sourcePathInput.value += SOURCE_CODE_EXTENSION;
+                sourcePathInput.selectionStart = sourcePathInput.selectionEnd = sourcePathInput.value.length - 2;
+            }
+        }
+        adaptTextInputToValueLength(sourcePathInput);
+        sourcePathInput.classList.toggle('invalid-input', !sourcePathInput.value);
+        const outputPathCheckbox = formValues['i-output-path'].checkbox;
+        const outputPathInput = formValues['i-output-path'].input;
+        if (!outputPathInput.value || outputPathInput.value === '' || outputPathInput.value === './') {
+            outputPathInput.value = '';
+            outputPathCheckbox.checked = false;
+        }
+        else {
+            outputPathInput.value = (!outputPathInput.value.startsWith('./') ? './' : '') + (outputPathInput.value !== '.' ? outputPathInput.value : '');
+            outputPathCheckbox.checked = true;
+        }
+        adaptTextInputToValueLength(outputPathInput);
+        // BUILD COMMAND
+        const command = [];
+        // Compiler command
+        command.push(`${(_a = formValues['i-use-compiler'].input) === null || _a === void 0 ? void 0 : _a.value}`);
+        // if no source path is specified, return just this
+        if (!sourcePathInput.value)
+            return command.join(' ');
+        // Compiler options
+        else
+            command.push(`${sourcePathInput.value}`);
+        if (formValues['i-output-path'].checkbox.checked && ((_b = formValues['i-output-path'].input) === null || _b === void 0 ? void 0 : _b.value) && ((_c = formValues['i-output-path'].input) === null || _c === void 0 ? void 0 : _c.value) !== COMPILER_INFO.default_output_filename)
+            command.push(`-o ${(_d = formValues['i-output-path'].input) === null || _d === void 0 ? void 0 : _d.value}`);
+        if (formValues['i-verbose-output'].checkbox.checked)
+            command.push(`-v`);
+        if (formValues['i-standard'].checkbox.checked)
+            command.push(`-std=${(_e = formValues['i-standard'].input) === null || _e === void 0 ? void 0 : _e.value}`);
+        if (formValues['i-all-warnings'].checkbox.checked)
+            command.push(`-Wall`);
+        if (formValues['i-pedantic'].checkbox.checked) {
+            if (formValues['i-pedantic-errors'].checkbox.checked)
+                command.push(`-pedantic-errors`);
+            else
+                command.push(`-pedantic`);
+        }
+        command.push('&&');
+        // Run after compiling
+        if (formValues['i-run-after-compiling'].checkbox.checked) {
+            // Clear
+            if (formValues['i-clear-before-running'].checkbox.checked) {
+                command.push(`clear`);
+                command.push('&&');
+            }
+            // Run
+            command.push(`${((_f = formValues['i-output-path'].input) === null || _f === void 0 ? void 0 : _f.value) ? (_g = formValues['i-output-path'].input) === null || _g === void 0 ? void 0 : _g.value : COMPILER_INFO.default_output_filename}`);
+            command.push('&&');
+            // Delete
+            if (formValues['i-delete-after-running'].checkbox.checked) {
+                command.push(`rm ${((_h = formValues['i-output-path'].input) === null || _h === void 0 ? void 0 : _h.value) ? (_j = formValues['i-output-path'].input) === null || _j === void 0 ? void 0 : _j.value : COMPILER_INFO.default_output_filename}`);
+                command.push('&&');
+            }
+        }
+        // Lazy aah solution cz ion wanna keep track of what the last command is
+        if (command[command.length - 1] === '&&')
+            command.pop();
+        return command.join(' ');
     }
 };
-console.log(makeBoilerplateGeneratorHTML(compile_command_generator));
+const c_boilerplate_generator = {
+    label: 'Base per programmi C',
+    copy_button_label: 'Copia codice',
+    inputs: [
+        {
+            id: 'i-initial-comment',
+            label: 'Commento iniziale'
+        }, {
+            id: 'i-include-stdio',
+            label: 'Includi <stdio.h>'
+        }, {
+            id: 'i-include-stdlib',
+            label: 'Includi <stdlib.h>'
+        }, {
+            id: 'i-return-zero',
+            label: 'Restituisci 0'
+        }
+    ],
+    generator_fn: formValues => {
+        const code = [];
+        if (formValues['i-initial-comment'].checkbox.checked) {
+            code.push(`/*`);
+            code.push(`\t`);
+            code.push(`*/`);
+            code.push(``);
+        }
+        if (formValues['i-include-stdio'].checkbox.checked)
+            code.push(`#include <stdio.h>`);
+        if (formValues['i-include-stdlib'].checkbox.checked)
+            code.push(`#include <stdlib.h>`);
+        if (formValues['i-include-stdio'].checkbox.checked || formValues['i-include-stdlib'].checkbox.checked)
+            code.push(``);
+        // Main function body
+        code.push(`int main(int argc, char * argv[]) {`);
+        code.push(`\t`);
+        if (formValues['i-return-zero'].checkbox.checked)
+            code.push(`\treturn 0;`);
+        code.push(`}`);
+        return code.join('\n');
+    }
+};
+// CONSTANTS
+const boilerplateGeneratorsParent = document.body.querySelector('.boilerplate-generators-list');
+// SCRIPT
+boilerplateGeneratorsParent === null || boilerplateGeneratorsParent === void 0 ? void 0 : boilerplateGeneratorsParent.appendChild(makeBoilerplateGeneratorHTML(compile_command_generator));
+boilerplateGeneratorsParent === null || boilerplateGeneratorsParent === void 0 ? void 0 : boilerplateGeneratorsParent.appendChild(makeBoilerplateGeneratorHTML(c_boilerplate_generator));

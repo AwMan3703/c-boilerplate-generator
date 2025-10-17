@@ -23,6 +23,9 @@ input[type="submit"]:active {
 input[type="checkbox"] {
   accent-color: darkorange;
 }
+input[type="text"].invalid-input {
+  border: 2px solid red;
+}
 hr {
   width: 100%;
 }
@@ -51,80 +54,88 @@ select {
     background-position-x: 100%;
   }
 }
-#command-output-block {
+.boilerplate-generators-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 2.5em;
+}
+.boilerplate-generator-title {
+  margin-block: 0.5em;
+}
+.boilerplate-generator hr {
+  margin-block: 1.2em;
+}
+.boilerplate-generator-output-block {
   display: flex;
   flex-direction: column;
 }
-#command-output {
+.boilerplate-generator-output {
   margin-block: 0;
   margin-block-end: 8px;
   min-height: 1em;
   line-height: 1em;
   word-break: keep-all;
+  white-space: pre-wrap;
   padding-inline: 0.5em;
   padding-block: 0.9em;
   border-radius: 0.3em;
   font-family: monospace;
   font-size: 1.5em;
-  color: white;
+  color: #c3c3c4;
   background-color: #0f0f30;
 }
-#command-output::before,
-#command-output::after {
+.boilerplate-generator-output.terminal {
+  color: white;
+}
+.boilerplate-generator-output.terminal::before,
+.boilerplate-generator-output.terminal::after {
   color: #ff8c00a5;
 }
-#command-output::before {
+.boilerplate-generator-output.terminal::before {
   content: 'cwd>';
 }
-#command-output::after {
+.boilerplate-generator-output.terminal::after {
   content: '_';
 }
-#command-output.cursor::after {
+body.cursor .boilerplate-generator-output.terminal::after {
   content: '█';
 }
-form#command-builder-options {
+.boilerplate-generator-error-list:empty {
+  display: none;
+}
+.boilerplate-generator-output-copy-button.temporary-text-visible {
+  pointer-events: none;
+}
+.boilerplate-generator-presets:empty {
+  display: none;
+}
+.boilerplate-generator-presets:empty + hr {
+  display: none;
+}
+form.boilerplate-generator-form {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   max-width: 650px;
   margin-inline: auto;
 }
-form#command-builder-options > :has(input[type='checkbox']:checked)[data-cli-token]::after {
+.boilerplate-generator-form-input input[type='checkbox']:checked + label[data-token]::after {
   margin-inline-start: 8px;
   font-size: 0.8em;
   color: #c3c3c4;
   background-color: #a4a4a8;
   padding-inline: 0.25em;
   border-radius: 0.3em;
-  content: attr(data-cli-token);
+  content: attr(data-token);
 }
-form#command-builder-options input#source-path:placeholder-shown {
-  border-color: red;
-  border-style: solid;
+.boilerplate-generator-dependent-inputs .boilerplate-generator-form-input::before {
+  content: attr(data-treeview-branch);
+  white-space: pre;
+  color: #a4a4a8;
 }
-form#command-builder-options:has(#use-pedantic:not(:checked)) > .depends-on-use-pedantic,
-form#command-builder-options:has(#run-binary-after-compiling:not(:checked)) > .depends-on-run-binary-after-compiling {
-  opacity: 0.25;
+.boilerplate-generator-form-input input[type='checkbox']:not(:checked) ~ .boilerplate-generator-dependent-inputs {
+  opacity: 0.5;
   pointer-events: none;
-}
-#platform-warning {
-  display: none;
-  margin-block: 0.5em;
-}
-#platform-selector:has(> option[data-non-tested]:checked) ~ #platform-warning {
-  display: revert;
-}
-.button-descriptor {
-  color: white;
-  opacity: 0.75;
-  font-size: 0.9em;
-  margin: 0;
-  margin-block-end: 0.5em;
-}
-#update-output-button {
-  background-color: #a4a4a8;
-}
-#update-output-button:active {
-  background-color: #c3c3c4;
 }
 /*# sourceMappingURL=index.css.map */

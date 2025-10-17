@@ -1,70 +1,75 @@
 @import url(common);
 
-#command-output-block {
+.boilerplate-generators-list {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	gap: @gap-max;
+}
+
+.boilerplate-generator-title {
+	margin-block: .5em;
+}
+
+.boilerplate-generator hr { margin-block: 1.2em; }
+
+.boilerplate-generator-output-block {
 	display: flex;
 	flex-direction: column;
 }
-#command-output {
+.boilerplate-generator-output {
 	margin-block: 0;
 	margin-block-end: 8px;
 	min-height: 1em;
 	line-height: 1em;
 	word-break: keep-all;
+	white-space: pre-wrap;
 	padding-inline: .5em;
 	padding-block: .9em;
 	border-radius: .3em;
 	font-family: monospace;
 	font-size: 1.5em;
-	color: white;
+	color: @color-background-light;
 	background-color: @color-background;
 }
-#command-output::before,
-#command-output::after { color: @color-accent-secondary; }
-#command-output::before { content: 'cwd>' }
-#command-output::after { content: '_'; }
-#command-output.cursor::after { content: '█'; }
+.boilerplate-generator-output.terminal { color: white; }
+.boilerplate-generator-output.terminal::before,
+.boilerplate-generator-output.terminal::after { color: @color-accent-secondary; }
+.boilerplate-generator-output.terminal::before { content: 'cwd>' }
+.boilerplate-generator-output.terminal::after { content: '_'; }
+body.cursor .boilerplate-generator-output.terminal::after { content: '█'; }
 
-form#command-builder-options {
+.boilerplate-generator-error-list:empty { display: none }
+.boilerplate-generator-output-copy-button.temporary-text-visible { pointer-events: none }
+
+.boilerplate-generator-presets:empty { display: none }
+.boilerplate-generator-presets:empty + hr { display: none }
+
+form.boilerplate-generator-form {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
 	max-width: 650px;
 	margin-inline: auto;
 }
-form#command-builder-options > :has(input[type='checkbox']:checked)[data-cli-token]::after {
+
+.boilerplate-generator-form-input input[type='checkbox']:checked + label[data-token]::after {
 	margin-inline-start: 8px;
 	font-size: .8em;
 	color: @color-background-light;
 	background-color: @color-background-dark;
 	padding-inline: .25em;
 	border-radius: .3em;
-	content: attr(data-cli-token);
+	content: attr(data-token);
 }
-form#command-builder-options input#source-path:placeholder-shown { border-color: red; border-style: solid }
-form#command-builder-options:has(#use-pedantic:not(:checked)) > .depends-on-use-pedantic,
-form#command-builder-options:has(#run-binary-after-compiling:not(:checked)) > .depends-on-run-binary-after-compiling {
-	opacity: .25;
+.boilerplate-generator-dependent-inputs .boilerplate-generator-form-input::before {
+	content: attr(data-treeview-branch);
+	white-space: pre;
+	color: @color-background-dark;
+}
+.boilerplate-generator-form-input input[type='checkbox']:not(:checked) ~ .boilerplate-generator-dependent-inputs {
+	opacity: .5;
 	pointer-events: none;
 }
 
-#platform-warning {
-	display: none;
-	margin-block: .5em;
-}
-#platform-selector:has(> option[data-non-tested]:checked) ~ #platform-warning {
-	display: revert;
-}
 
-.button-descriptor {
-	color: white;
-	opacity: .75;
-	font-size: .9em;
-	margin: 0;
-	margin-block-end: .5em;
-}
-#update-output-button {
-	background-color: @color-background-dark;
-}
-#update-output-button:active {
-	background-color: @color-background-light;
-}

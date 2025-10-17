@@ -48,28 +48,6 @@ type commandOptions = {
 
 // FUNCTIONS
 
-function adaptTextInputToValueLength(e: HTMLInputElement) {
-    const text = (!e.value || e.value === '') ? e.placeholder : e.value
-    e.size = Math.max(text.length, 5)
-}
-
-function getCommandBuilderFormData() {
-    const options: commandOptions = {}
-    options.platformName = commandBuilderInput_platformSelector.selectedOptions[0].value
-    options.compilerName = commandBuilderInput_useCompiler ? commandBuilderInput_compilerSelector.selectedOptions[0].value : ''
-    options.sourceCodePath = commandBuilderInput_useSourcePath.checked ? commandBuilderInput_sourcePath.value : ''
-    options.binaryOutputPath = commandBuilderInput_useOutputPath.checked ? commandBuilderInput_outputPath.value: ''
-    options.verbose = commandBuilderInput_useVerbose.checked
-    options.standard = commandBuilderInput_useStandard.checked ? commandBuilderInput_standardSelector.selectedOptions[0].value : ''
-    options.warningAll = commandBuilderInput_useWarningAll.checked
-    options.pedantic = commandBuilderInput_usePedantic.checked
-    options.pedanticErrors = commandBuilderInput_usePedanticErrors.checked
-    options.runBinaryWhenCompiled = commandBuilderInput_runBinaryAfterCompiling.checked
-    options.clearScreenBeforeRunning = commandBuilderInput_clearScreenBeforeRunning.checked
-    options.deleteBinaryAfterRunning = commandBuilderInput_deleteBinaryAfterRunning.checked
-    return options
-}
-
 // EXAMPLE: clear && gcc my/source/code.c -o my/binary && ./my/binary && rm ./my/binary
 function generateCommand(options: commandOptions) {
     let command: string[] = []
@@ -110,9 +88,7 @@ function generateCommand(options: commandOptions) {
 }
 
 function updateCommandOutput() {
-    const options = getCommandBuilderFormData()
-    commandOutputParagraph.innerText = generateCommand(options)
-    document.title = `${options.compilerName.toUpperCase()} command generator`
+
 }
 
 function copyCommandToClipboard() {
@@ -122,7 +98,7 @@ function copyCommandToClipboard() {
             const originalEvents = copyCommandOutputButton.style.pointerEvents
             copyCommandOutputButton.innerText = commandOutputParagraph.innerText.length > 0 ? 'Copiato!' : 'Nulla da copiare!'
             copyCommandOutputButton.style.pointerEvents = 'none'
-            setTimeout(_ => {
+            setTimeout(() => {
                 copyCommandOutputButton.innerText = originalLabel
                 copyCommandOutputButton.style.pointerEvents = originalEvents
             }, 2000)
@@ -133,31 +109,31 @@ function copyCommandToClipboard() {
 
 // SCRIPT
 
-copyCommandOutputButton.addEventListener('click', copyCommandToClipboard)
-copyCommandOutputButton.addEventListener('touchend', copyCommandToClipboard)
+copyCommandOutputButton?.addEventListener('click', copyCommandToClipboard)
+copyCommandOutputButton?.addEventListener('touchend', copyCommandToClipboard)
 
-commandBuilderInput_sourcePath.addEventListener('input', _ => {
+commandBuilderInput_sourcePath?.addEventListener('input', _ => {
     const e = commandBuilderInput_sourcePath
     if (!e.value || e.value === '' || e.value === SOURCE_CODE_EXTENSION) { e.value = ''; return }
     if (e.value.endsWith(SOURCE_CODE_EXTENSION) && e.value !== SOURCE_CODE_EXTENSION) { return }
     e.value += SOURCE_CODE_EXTENSION
     e.selectionStart = e.selectionEnd = e.value.length - 2
 })
-commandBuilderInput_sourcePath.addEventListener('input', _ => adaptTextInputToValueLength(commandBuilderInput_sourcePath))
-commandBuilderInput_outputPath.addEventListener('input', _ => {
+commandBuilderInput_sourcePath?.addEventListener('input', _ => adaptTextInputToValueLength(commandBuilderInput_sourcePath))
+commandBuilderInput_outputPath?.addEventListener('input', _ => {
     const e = commandBuilderInput_outputPath
     if (!e.value || e.value === '' || e.value === './') { e.value = ''; commandBuilderInput_useOutputPath.checked = false; return }
     e.value = (!e.value.startsWith('./') ? './' : '') + (e.value !== '.' ? e.value : '')
     commandBuilderInput_useOutputPath.checked = true
 })
-commandBuilderInput_outputPath.addEventListener('input', _ => adaptTextInputToValueLength(commandBuilderInput_outputPath))
-commandBuilderOptionsForm.addEventListener('change', updateCommandOutput)
-commandBuilderOptionsForm.addEventListener('submit', e => {
+commandBuilderInput_outputPath?.addEventListener('input', _ => adaptTextInputToValueLength(commandBuilderInput_outputPath))
+commandBuilderOptionsForm?.addEventListener('change', updateCommandOutput)
+commandBuilderOptionsForm?.addEventListener('submit', e => {
     e.preventDefault()
     updateCommandOutput()
 })
 
-updateCommandOutputButton.addEventListener('click', updateCommandOutput)
+updateCommandOutputButton?.addEventListener('click', updateCommandOutput)
 
 const c_boilerplate = '' +
     '/*\n' +
@@ -171,10 +147,10 @@ const c_boilerplate = '' +
     '\treturn 0;\n' +
     '}'
 
-copyBoilerplateButton.addEventListener('click', _ => {
+copyBoilerplateButton?.addEventListener('click', _ => {
     navigator.clipboard.writeText(c_boilerplate)
 })
 
 
 updateCommandOutput()
-setInterval(_ => commandOutputParagraph.classList.toggle('cursor'), 500)
+setInterval(() => document.body.classList.toggle('cursor'), 500)

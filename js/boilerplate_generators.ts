@@ -26,14 +26,15 @@ type BoilerplateGeneratorNativeInput = {
     // Whether this input should be disabled
     disabled?: boolean
     // Further inputs that depend upon this one
-    dependants?: BoilerplateGeneratorInput[]
+    dependents?: BoilerplateGeneratorInput[]
     // Additional attributes for the generated HTML input
     attributes?: { [name: string] : string }
 }
 type BoilerplateGeneratorSelectInput = BoilerplateGeneratorNativeInput & {
     input_type: 'select'
     /* Options for the select input, either a list of values or a dictionary,
-       where the keys are option labels, associated with their value */
+       where the keys are option labels, associated with their value. If the
+       label (key) begins with "[DISABLED]", the option will be disabled */
     options: string[] | { [label: string] : string }
 }
 // A boilerplate generator input
@@ -44,8 +45,14 @@ type BoilerplateGeneratorInput =
     BoilerplateGeneratorNativeInput |
     BoilerplateGeneratorSelectInput
 
-// Values read from the boilerplate generator form
-type BoilerplateGeneratorInputReturnValues = { [id: BoilerplateGeneratorInputId]: any }
+/* Values read from the boilerplate generator form (references to the inputs on the DOM,
+   mapped to their id in the boilerplate generator) */
+type BoilerplateGeneratorInputReturnValues = {
+    [id: BoilerplateGeneratorInputId]: {
+        checkbox: HTMLInputElement
+        input?: HTMLInputElementExtended
+    }
+}
 
 // A dictionary with preset values to fill out a generator's form
 /* The keys are the inputs' IDs, the values specify whether each item should be checked
@@ -67,11 +74,15 @@ type BoilerplateGenerator = {
     inputs: BoilerplateGeneratorInput[]
     // A list of presets to present to the user
     presets?: BoilerplateGeneratorPreset[]
+    // Whether to stylize the output like a terminal
+    terminal_output?: boolean
+    // The label for the "copy output" button
+    copy_button_label?: string
     // A function to generate boilerplate from a set of input values
     /* This function should take in a series of input values from the boilerplate generator's form.
-       the values are passed in a dictionary, where the keys are the inputs' IDs as set in the `inputs`
+       The values are passed in a dictionary, where the keys are the inputs' IDs as set in the `inputs`
        field, and the values are the ones the user entered */
-    generatorFn: (formValues: BoilerplateGeneratorInputReturnValues) => string
+    generator_fn: (formValues: BoilerplateGeneratorInputReturnValues) => string
 }
 
 
@@ -87,18 +98,63 @@ const boilerplateGeneratorFormInputTemplate = document.querySelector('template#b
 const getBoilerplateGeneratorId = (generator: BoilerplateGenerator) => `bpgen-${generator.presets?.length || '0'}-${generator.inputs.length}-${generator.label.toLowerCase().replace(/ /g, '_', )}`
 
 const getBoilerplateGeneratorInputId = (input: BoilerplateGeneratorInput) => `bpgeninput-${input.id.toLowerCase()}-${input.input_type?.toLowerCase() || 'default'}`
+const getBoilerplateGeneratorInputCheckboxId = (input: BoilerplateGeneratorInput) => `${getBoilerplateGeneratorInputId(input)}-checkbox`
+const getBoilerplateGeneratorInputLabelId = (input: BoilerplateGeneratorInput) => `${getBoilerplateGeneratorInputId(input)}-label`
+const getBoilerplateGeneratorInputSecondaryId = (input: BoilerplateGeneratorInput) => `${getBoilerplateGeneratorInputId(input)}-secondary`
+const getBoilerplateGeneratorInputDependentsWrapperId = (input: BoilerplateGeneratorInput) => `${getBoilerplateGeneratorInputId(input)}-dependent`
 
 function applyPreset(preset: BoilerplateGeneratorPreset, generator: BoilerplateGenerator) {
     generator.inputs.forEach(input => {
-        const e = document.querySelector(getBoilerplateGeneratorInputId(input)) as HTMLInputElement
+        if (!preset.inputs[input.id]) return
 
-        e.checked = preset.inputs[input.id].checked
+        const e = document.querySelector(`#${getBoilerplateGeneratorInputId(input)}`) as HTMLElement
+        if (!e) return
+        const c = e.querySelector('input[type="checkbox"]') as HTMLInputElement
 
-        if (!!preset.inputs[input.id].value) {
-            const secondaryInput = e.querySelector('label > .secondary-input') as HTMLInputElementExtended
+        c.checked = preset.inputs[input.id].checked
+        c.dispatchEvent(new Event('change', {bubbles: true}))
+
+        const secondaryInput = e.querySelector('label > .secondary-input') as HTMLInputElementExtended
+        if (preset.inputs[input.id].value !== undefined && preset.inputs[input.id].value !== null && !!secondaryInput) {
             secondaryInput.value = preset.inputs[input.id].value
+
+            secondaryInput.dispatchEvent(new Event('input', { bubbles: true }))
+            secondaryInput.dispatchEvent(new Event('change', { bubbles: true }))
         }
     })
+}
+
+function collectBoilerplateGeneratorFormValues(inputsWrapper: HTMLElement, generator: BoilerplateGenerator | {inputs: BoilerplateGeneratorInput[]}) {
+    const values: BoilerplateGeneratorInputReturnValues = {}
+
+    generator.inputs.forEach(input => {
+        const e = inputsWrapper.querySelector(`#${getBoilerplateGeneratorInputId(input)}`) as HTMLElement
+        if (!e) throw new Error(`Could not find input wrapper for input: ${input.label}`)
+        const checkbox = e.querySelector(`#${getBoilerplateGeneratorInputCheckboxId(input)}`) as HTMLInputElement
+        if (!checkbox) throw new Error(`Could not find checkbox for input: ${input.label}`)
+        const secondaryInput = e.querySelector(`#${getBoilerplateGeneratorInputSecondaryId(input)}`) as HTMLInputElementExtended
+        const dependentsWrapper = e.querySelector(`#${getBoilerplateGeneratorInputDependentsWrapperId(input)}`) as HTMLElement
+
+        const result: { checkbox: HTMLInputElement, input?: HTMLInputElementExtended } = { checkbox: checkbox }
+        if (input.input_type && secondaryInput) result.input = secondaryInput
+
+        values[input.id] = result
+
+        if (!!input.dependents) {
+            const dependentValues = collectBoilerplateGeneratorFormValues(dependentsWrapper, {inputs: input.dependents})
+            Object.entries(dependentValues).forEach(([k,v]) => {
+                values[k as BoilerplateGeneratorInputId] = v
+            })
+        }
+    })
+
+    return values
+}
+
+function updateBoilerplateOutput(form: HTMLFormElement, outputElement: HTMLElement, generator: BoilerplateGenerator) {
+    const values = collectBoilerplateGeneratorFormValues(form, generator)
+    if (!values) throw new Error(`Couldn't read boilerplate generator form values for "${generator.label}"`)
+    outputElement.innerText = generator.generator_fn(values)
 }
 
 function makeBoilerplateGeneratorPresetButtonHTML(preset: BoilerplateGeneratorPreset, generator: BoilerplateGenerator) {
@@ -110,25 +166,38 @@ function makeBoilerplateGeneratorPresetButtonHTML(preset: BoilerplateGeneratorPr
     return e
 }
 
-function makeBoilerplateGeneratorInputHTML(input: BoilerplateGeneratorInput, generator: BoilerplateGenerator) {
+function makeBoilerplateGeneratorInputHTML(input: BoilerplateGeneratorInput, ancestorsLast: boolean[] = []) {
     const e = (boilerplateGeneratorFormInputTemplate.content.cloneNode(true) as HTMLTemplateElement).firstChild as HTMLElement
+
+    e.id = getBoilerplateGeneratorInputId(input)
 
     const checkboxElement = e.querySelector('input[type="checkbox"]') as HTMLInputElement
     const labelElement = e.querySelector('label') as HTMLLabelElement
+    const dependentInputsWrapper = e.querySelector('.boilerplate-generator-dependent-inputs') as HTMLElement
 
-    checkboxElement.id = `${getBoilerplateGeneratorInputId(input)}-checkbox`
-    labelElement.id = `${getBoilerplateGeneratorInputId(input)}-label`
+    checkboxElement.id = getBoilerplateGeneratorInputCheckboxId(input)
+    labelElement.id = getBoilerplateGeneratorInputLabelId(input)
     labelElement.setAttribute('for', checkboxElement.id)
+    labelElement.innerText = `${input.label}${!!input.input_type ? ': ' : ''}`
+    if (input.token) labelElement.dataset.token = input.token
+    dependentInputsWrapper.id = getBoilerplateGeneratorInputDependentsWrapperId(input)
 
     if (!!input.input_type) {
         let secondaryInputElement = document.createElement(input.input_type === 'select' ? 'select' : 'input')
+        secondaryInputElement.id = getBoilerplateGeneratorInputSecondaryId(input)
+        secondaryInputElement.classList.add('secondary-input')
+
         if (input.input_type === 'select') {
             secondaryInputElement = secondaryInputElement as HTMLSelectElement
             Object.entries((input as BoilerplateGeneratorSelectInput).options).forEach(([label, value]) => {
                 const optionElement = document.createElement('option')
+                optionElement.value = value
+                if (label.startsWith("[DISABLED]")) {
+                    optionElement.setAttribute('disabled', 'true')
+                    label = label.replace("[DISABLED]", '').trim()
+                }
                 // If options are in array form, use the value - else use the specified label
                 optionElement.innerText = Array.isArray((input as BoilerplateGeneratorSelectInput).options) ? value : label
-                optionElement.value = value
                 secondaryInputElement.appendChild(optionElement)
             })
         } else {
@@ -138,50 +207,53 @@ function makeBoilerplateGeneratorInputHTML(input: BoilerplateGeneratorInput, gen
             secondaryInputElement.setAttribute(name, value)
         })
 
-        labelElement?.appendChild(secondaryInputElement)
+        labelElement.appendChild(secondaryInputElement)
     }
 
     checkboxElement.checked = input.checked || false
     if (!!input.disabled) checkboxElement.disabled = true
 
-    // TODO : implement recursion for input.dependants
+    input.dependents?.forEach((dependentInput, index) => {
+        const isLast = index >= (input.dependents?.length ? input.dependents?.length - 1 : 0)
+        const dependentInputElement = makeBoilerplateGeneratorInputHTML(dependentInput, [...ancestorsLast, isLast]);
+
+        const ancestorBranch = ancestorsLast.map(aIsLast => aIsLast ? '   ' : ' │ ').join('')
+        const currentBranch = isLast ? ' └─' : ' ├─'
+        dependentInputElement.dataset.treeviewBranch = ancestorBranch + currentBranch
+
+        dependentInputsWrapper.appendChild(dependentInputElement)
+    })
 
     return e
 }
 
+
 function makeBoilerplateGeneratorHTML(generator: BoilerplateGenerator) {
     const e = (boilerplateGeneratorTemplate.content.cloneNode(true) as HTMLTemplateElement).firstChild as HTMLDivElement
-    const presetButtons: HTMLButtonElement[] = []
-    const formInputs: HTMLElement[] = []
+    e.id = getBoilerplateGeneratorId(generator)
 
     const titleElement = e.querySelector('.boilerplate-generator-title') as HTMLHeadingElement
     const copyOutputButtonElement = e.querySelector('.boilerplate-generator-output-copy-button') as HTMLButtonElement
     const outputElement = e.querySelector('.boilerplate-generator-output') as HTMLParagraphElement
     const outputErrorListElement = e.querySelector('.boilerplate-generator-error-list') as HTMLUListElement
     const presetButtonsListElement = e.querySelector('.boilerplate-generator-presets') as HTMLUListElement
-    const formElement = e.querySelector('.boilerplate-form') as HTMLFormElement
+    const formElement = e.querySelector('.boilerplate-generator-form') as HTMLFormElement
 
     titleElement.innerText = generator.label
 
-    const copyOutputButtonFeedback = (text: string) => {
-        const oldText = copyOutputButtonElement.innerText
-        copyOutputButtonElement.disabled = true
-        copyOutputButtonElement.innerText = text
-        setTimeout(() => {
-            copyOutputButtonElement.disabled = true
-            copyOutputButtonElement.innerText = oldText
-        }, 1000)
-    }
+    if (generator.terminal_output) outputElement.classList.add('terminal')
+
     copyOutputButtonElement.addEventListener('click', _ => {
-        navigator.clipboard.writeText(outputElement.innerText).then(r => copyOutputButtonFeedback('Copiato!'))
+        navigator.clipboard.writeText(outputElement.innerText).then(r => temporaryText(copyOutputButtonElement, !!outputElement.innerText ? 'Copiato!' : 'Nulla da copiare!'))
     })
+    copyOutputButtonElement.innerText = generator.copy_button_label || 'Copia output'
 
-    generator.presets?.forEach(preset => presetButtons.push(makeBoilerplateGeneratorPresetButtonHTML(preset, generator)))
+    generator.presets?.forEach(preset => presetButtonsListElement.appendChild(makeBoilerplateGeneratorPresetButtonHTML(preset, generator)))
 
-    generator.inputs.forEach(input => formInputs.push(makeBoilerplateGeneratorInputHTML(input, generator)))
+    generator.inputs.forEach(input => formElement.appendChild(makeBoilerplateGeneratorInputHTML(input)))
+    formElement.addEventListener('change', _ => updateBoilerplateOutput(formElement, outputElement, generator))
 
-    presetButtons.forEach(button => presetButtonsListElement?.appendChild(button))
-    formInputs.forEach(input => formElement?.appendChild(input))
+    updateBoilerplateOutput(formElement, outputElement, generator)
     return e
 }
 

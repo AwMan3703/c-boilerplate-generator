@@ -7,6 +7,10 @@
 @color-background-light: #c3c3c4;
 @color-background-dark: #a4a4a8;
 
+@gap-min: .5em;
+@gap-med: 1em;
+@gap-max: 2.5em;
+
 * {
 	color: @color-main;
 	font-family: "JetBrains Mono", "Andale Mono", "Droid Sans Mono", monospace;
@@ -34,6 +38,10 @@ input[type="submit"]:active {
 
 input[type="checkbox"] {
 	accent-color: @color-accent;
+}
+
+input[type="text"].invalid-input {
+	border: 2px solid red;
 }
 
 hr {
