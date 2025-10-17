@@ -4,136 +4,194 @@ const SOURCE_CODE_EXTENSION = '.c';
 const COMPILER_INFO = {
     default_output_filename: 'a.out'
 };
-const commandOutputParagraph = document.querySelector('p#command-output');
-const copyCommandOutputButton = document.querySelector('button#copy-command-output');
-const commandBuilderOptionsForm = document.querySelector('form#command-builder-options');
-const commandBuilderInput_useCompiler = document.querySelector('form#command-builder-options input#use-compiler');
-const commandBuilderInput_platformSelector = document.querySelector('form#command-builder-options select#platform-selector');
-const commandBuilderInput_compilerSelector = document.querySelector('form#command-builder-options select#compiler-selector');
-const commandBuilderInput_useSourcePath = document.querySelector('form#command-builder-options input#use-source-path');
-const commandBuilderInput_sourcePath = document.querySelector('form#command-builder-options input#source-path');
-const commandBuilderInput_useOutputPath = document.querySelector('form#command-builder-options input#use-output-path');
-const commandBuilderInput_outputPath = document.querySelector('form#command-builder-options input#output-path');
-const commandBuilderInput_useVerbose = document.querySelector('form#command-builder-options input#use-verbose');
-const commandBuilderInput_useStandard = document.querySelector('form#command-builder-options input#use-standard');
-const commandBuilderInput_standardSelector = document.querySelector('form#command-builder-options select#standard-selector');
-const commandBuilderInput_useWarningAll = document.querySelector('form#command-builder-options input#use-warning-all');
-const commandBuilderInput_usePedantic = document.querySelector('form#command-builder-options input#use-pedantic');
-const commandBuilderInput_usePedanticErrors = document.querySelector('form#command-builder-options input#use-pedantic-errors');
-const commandBuilderInput_runBinaryAfterCompiling = document.querySelector('form#command-builder-options input#run-binary-after-compiling');
-const commandBuilderInput_clearScreenBeforeRunning = document.querySelector('form#command-builder-options input#clear-screen-before-running');
-const commandBuilderInput_deleteBinaryAfterRunning = document.querySelector('form#command-builder-options input#delete-binary-after-running');
-const updateCommandOutputButton = document.querySelector('#update-output-button');
-const copyBoilerplateButton = document.querySelector('#copy-c-boilerplate');
-// FUNCTIONS
-// EXAMPLE: clear && gcc my/source/code.c -o my/binary && ./my/binary && rm ./my/binary
-function generateCommand(options) {
-    let command = [];
-    // Compiler command
-    command.push(`${options.compilerName}`);
-    // if no source path is specified, return just this
-    if (!options.sourceCodePath)
-        return command.join(' ');
-    // Compiler options
-    if (options.sourceCodePath)
-        command.push(`${options.sourceCodePath}`);
-    if (options.binaryOutputPath && options.binaryOutputPath !== COMPILER_INFO.default_output_filename)
-        command.push(`-o ${options.binaryOutputPath}`);
-    if (options.verbose)
-        command.push(`-v`);
-    if (options.standard)
-        command.push(`-std=${options.standard}`);
-    if (options.warningAll)
-        command.push(`-Wall`);
-    if (options.pedantic) {
-        if (options.pedanticErrors)
-            command.push(`-pedantic-errors`);
+const boilerplateGeneratorsParent = document.body.querySelector('.boilerplate-generators-list');
+// BOILERPLATE GENERATORS DEFINITIONS
+const compile_command_generator = {
+    label: 'Comando di Compilazione',
+    terminal_output: true,
+    copy_button_label: 'Copia comando',
+    inputs: [
+        {
+            id: 'i-platform',
+            input_type: "select",
+            options: { 'macOS': 'macos', 'Linux & WSL': 'linux', '[DISABLED]Windows': 'windows' },
+            label: 'Piattaforma',
+            checked: true,
+            disabled: true
+        }, {
+            id: 'i-use-compiler',
+            input_type: "select",
+            options: { 'GCC': 'gcc', '[DISABLED]CLang': 'clang' },
+            label: 'Compiler',
+            checked: true,
+            disabled: true
+        }, {
+            id: 'i-source-path',
+            input_type: "text",
+            label: 'Percorso codice sorgente',
+            attributes: { 'placeholder': 'relativo a cwd' },
+            checked: true,
+            disabled: true
+        }, {
+            id: 'i-output-path',
+            input_type: "text",
+            label: 'Percorso eseguibile',
+            token: '-o',
+            attributes: { 'placeholder': 'relativo a cwd' }
+        }, {
+            id: 'i-verbose-output',
+            label: 'Output prolisso',
+            token: '-v'
+        }, {
+            id: 'i-standard',
+            input_type: "select",
+            label: 'Standard',
+            options: { 'C89 (ANSI)': 'c89', 'C90': 'c90', 'C95': 'c95', 'C99': 'c99', 'C11': 'c11', 'C17': 'c17', 'C23': 'c23' },
+            token: '-std'
+        }, {
+            id: 'i-all-warnings',
+            label: 'Visualizza tutti i warning',
+            token: '-Wall'
+        }, {
+            id: 'i-pedantic',
+            label: 'Modalità pedantic',
+            token: '-pedantic',
+            dependents: [{
+                    id: 'i-pedantic-errors',
+                    label: '(come errori)',
+                    token: '-pedantic-errors'
+                }]
+        }, {
+            id: 'i-run-after-compiling',
+            label: 'Esegui dopo la compilazione',
+            dependents: [{
+                    id: 'i-clear-before-running',
+                    label: 'Pulisci il terminale prima di eseguire',
+                    token: 'clear'
+                }, {
+                    id: 'i-delete-after-running',
+                    label: 'Rimuovi l\'eseguibile dopo l\'esecuzione',
+                    token: 'rm'
+                }]
+        },
+    ],
+    generator_fn: formValues => {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        // FORM FEEDBACK
+        const sourcePathInput = formValues['i-source-path'].input;
+        if (!sourcePathInput.value || sourcePathInput.value === '' || sourcePathInput.value === SOURCE_CODE_EXTENSION) {
+            sourcePathInput.value = '';
+        }
+        else {
+            if (sourcePathInput.value.endsWith(SOURCE_CODE_EXTENSION) && sourcePathInput.value !== SOURCE_CODE_EXTENSION) {
+            }
+            else {
+                sourcePathInput.value += SOURCE_CODE_EXTENSION;
+                sourcePathInput.selectionStart = sourcePathInput.selectionEnd = sourcePathInput.value.length - 2;
+            }
+        }
+        adaptTextInputToValueLength(sourcePathInput);
+        sourcePathInput.classList.toggle('invalid-input', !sourcePathInput.value);
+        const outputPathCheckbox = formValues['i-output-path'].checkbox;
+        const outputPathInput = formValues['i-output-path'].input;
+        if (!outputPathInput.value || outputPathInput.value === '' || outputPathInput.value === './') {
+            outputPathInput.value = '';
+            outputPathCheckbox.checked = false;
+        }
+        else {
+            outputPathInput.value = (!outputPathInput.value.startsWith('./') ? './' : '') + (outputPathInput.value !== '.' ? outputPathInput.value : '');
+            outputPathCheckbox.checked = true;
+        }
+        adaptTextInputToValueLength(outputPathInput);
+        // BUILD COMMAND
+        const command = [];
+        // Compiler command
+        command.push(`${(_a = formValues['i-use-compiler'].input) === null || _a === void 0 ? void 0 : _a.value}`);
+        // if no source path is specified, return just this
+        if (!sourcePathInput.value)
+            return command.join(' ');
+        // Compiler options
         else
-            command.push(`-pedantic`);
-    }
-    command.push('&&');
-    // Run after compiling
-    if (options.runBinaryWhenCompiled) {
-        // Clear
-        if (options.clearScreenBeforeRunning) {
-            command.push(`clear`);
-            command.push('&&');
+            command.push(`${sourcePathInput.value}`);
+        if (formValues['i-output-path'].checkbox.checked && ((_b = formValues['i-output-path'].input) === null || _b === void 0 ? void 0 : _b.value) && ((_c = formValues['i-output-path'].input) === null || _c === void 0 ? void 0 : _c.value) !== COMPILER_INFO.default_output_filename)
+            command.push(`-o ${(_d = formValues['i-output-path'].input) === null || _d === void 0 ? void 0 : _d.value}`);
+        if (formValues['i-verbose-output'].checkbox.checked)
+            command.push(`-v`);
+        if (formValues['i-standard'].checkbox.checked)
+            command.push(`-std=${(_e = formValues['i-standard'].input) === null || _e === void 0 ? void 0 : _e.value}`);
+        if (formValues['i-all-warnings'].checkbox.checked)
+            command.push(`-Wall`);
+        if (formValues['i-pedantic'].checkbox.checked) {
+            if (formValues['i-pedantic-errors'].checkbox.checked)
+                command.push(`-pedantic-errors`);
+            else
+                command.push(`-pedantic`);
         }
-        // Run
-        command.push(`${options.binaryOutputPath ? options.binaryOutputPath : COMPILER_INFO.default_output_filename}`);
         command.push('&&');
-        // Delete
-        if (options.deleteBinaryAfterRunning) {
-            command.push(`rm ${options.binaryOutputPath ? options.binaryOutputPath : COMPILER_INFO.default_output_filename}`);
+        // Run after compiling
+        if (formValues['i-run-after-compiling'].checkbox.checked) {
+            // Clear
+            if (formValues['i-clear-before-running'].checkbox.checked) {
+                command.push(`clear`);
+                command.push('&&');
+            }
+            // Run
+            command.push(`${((_f = formValues['i-output-path'].input) === null || _f === void 0 ? void 0 : _f.value) ? (_g = formValues['i-output-path'].input) === null || _g === void 0 ? void 0 : _g.value : COMPILER_INFO.default_output_filename}`);
             command.push('&&');
+            // Delete
+            if (formValues['i-delete-after-running'].checkbox.checked) {
+                command.push(`rm ${((_h = formValues['i-output-path'].input) === null || _h === void 0 ? void 0 : _h.value) ? (_j = formValues['i-output-path'].input) === null || _j === void 0 ? void 0 : _j.value : COMPILER_INFO.default_output_filename}`);
+                command.push('&&');
+            }
         }
+        // Lazy aah solution cz ion wanna keep track of what the last command is
+        if (command[command.length - 1] === '&&')
+            command.pop();
+        return command.join(' ');
     }
-    // Lazy aah solution cz ion wanna keep track of what the last command is
-    if (command[command.length - 1] === '&&')
-        command.pop();
-    return command.join(' ');
-}
-function updateCommandOutput() {
-}
-function copyCommandToClipboard() {
-    navigator.clipboard.writeText(commandOutputParagraph.innerText)
-        .then(_ => {
-        const originalLabel = copyCommandOutputButton.innerText;
-        const originalEvents = copyCommandOutputButton.style.pointerEvents;
-        copyCommandOutputButton.innerText = commandOutputParagraph.innerText.length > 0 ? 'Copiato!' : 'Nulla da copiare!';
-        copyCommandOutputButton.style.pointerEvents = 'none';
-        setTimeout(() => {
-            copyCommandOutputButton.innerText = originalLabel;
-            copyCommandOutputButton.style.pointerEvents = originalEvents;
-        }, 2000);
-    });
-}
+};
+const c_boilerplate_generator = {
+    label: 'Base per programmi C',
+    copy_button_label: 'Copia codice',
+    inputs: [
+        {
+            id: 'i-initial-comment',
+            label: 'Commento iniziale'
+        }, {
+            id: 'i-include-stdio',
+            label: 'Includi <stdio.h>'
+        }, {
+            id: 'i-include-stdlib',
+            label: 'Includi <stdlib.h>'
+        }, {
+            id: 'i-return-zero',
+            label: 'Restituisci 0'
+        }
+    ],
+    generator_fn: formValues => {
+        const code = [];
+        if (formValues['i-initial-comment'].checkbox.checked) {
+            code.push(`/*`);
+            code.push(`\t`);
+            code.push(`*/`);
+            code.push(``);
+        }
+        if (formValues['i-include-stdio'].checkbox.checked)
+            code.push(`#include <stdio.h>`);
+        if (formValues['i-include-stdlib'].checkbox.checked)
+            code.push(`#include <stdlib.h>`);
+        if (formValues['i-include-stdio'].checkbox.checked || formValues['i-include-stdlib'].checkbox.checked)
+            code.push(``);
+        // Main function body
+        code.push(`int main(int argc, char * argv[]) {`);
+        code.push(`\t`);
+        if (formValues['i-return-zero'].checkbox.checked)
+            code.push(`\treturn 0;`);
+        code.push(`}`);
+        return code.join('\n');
+    }
+};
 // SCRIPT
-copyCommandOutputButton === null || copyCommandOutputButton === void 0 ? void 0 : copyCommandOutputButton.addEventListener('click', copyCommandToClipboard);
-copyCommandOutputButton === null || copyCommandOutputButton === void 0 ? void 0 : copyCommandOutputButton.addEventListener('touchend', copyCommandToClipboard);
-commandBuilderInput_sourcePath === null || commandBuilderInput_sourcePath === void 0 ? void 0 : commandBuilderInput_sourcePath.addEventListener('input', _ => {
-    const e = commandBuilderInput_sourcePath;
-    if (!e.value || e.value === '' || e.value === SOURCE_CODE_EXTENSION) {
-        e.value = '';
-        return;
-    }
-    if (e.value.endsWith(SOURCE_CODE_EXTENSION) && e.value !== SOURCE_CODE_EXTENSION) {
-        return;
-    }
-    e.value += SOURCE_CODE_EXTENSION;
-    e.selectionStart = e.selectionEnd = e.value.length - 2;
-});
-commandBuilderInput_sourcePath === null || commandBuilderInput_sourcePath === void 0 ? void 0 : commandBuilderInput_sourcePath.addEventListener('input', _ => adaptTextInputToValueLength(commandBuilderInput_sourcePath));
-commandBuilderInput_outputPath === null || commandBuilderInput_outputPath === void 0 ? void 0 : commandBuilderInput_outputPath.addEventListener('input', _ => {
-    const e = commandBuilderInput_outputPath;
-    if (!e.value || e.value === '' || e.value === './') {
-        e.value = '';
-        commandBuilderInput_useOutputPath.checked = false;
-        return;
-    }
-    e.value = (!e.value.startsWith('./') ? './' : '') + (e.value !== '.' ? e.value : '');
-    commandBuilderInput_useOutputPath.checked = true;
-});
-commandBuilderInput_outputPath === null || commandBuilderInput_outputPath === void 0 ? void 0 : commandBuilderInput_outputPath.addEventListener('input', _ => adaptTextInputToValueLength(commandBuilderInput_outputPath));
-commandBuilderOptionsForm === null || commandBuilderOptionsForm === void 0 ? void 0 : commandBuilderOptionsForm.addEventListener('change', updateCommandOutput);
-commandBuilderOptionsForm === null || commandBuilderOptionsForm === void 0 ? void 0 : commandBuilderOptionsForm.addEventListener('submit', e => {
-    e.preventDefault();
-    updateCommandOutput();
-});
-updateCommandOutputButton === null || updateCommandOutputButton === void 0 ? void 0 : updateCommandOutputButton.addEventListener('click', updateCommandOutput);
-const c_boilerplate = '' +
-    '/*\n' +
-    '\t\n' +
-    '*/\n' +
-    '\n' +
-    '#include <stdio.h>\n' +
-    '\n' +
-    'int main(int argc, char * argv[]) {\n' +
-    '\n' +
-    '\treturn 0;\n' +
-    '}';
-copyBoilerplateButton === null || copyBoilerplateButton === void 0 ? void 0 : copyBoilerplateButton.addEventListener('click', _ => {
-    navigator.clipboard.writeText(c_boilerplate);
-});
-updateCommandOutput();
+boilerplateGeneratorsParent === null || boilerplateGeneratorsParent === void 0 ? void 0 : boilerplateGeneratorsParent.appendChild(makeBoilerplateGeneratorHTML(compile_command_generator));
+boilerplateGeneratorsParent === null || boilerplateGeneratorsParent === void 0 ? void 0 : boilerplateGeneratorsParent.appendChild(makeBoilerplateGeneratorHTML(c_boilerplate_generator));
 setInterval(() => document.body.classList.toggle('cursor'), 500);
