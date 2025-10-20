@@ -238,7 +238,7 @@ window.addEventListener('keydown', e => {
     const success = setUncollapsedBoilerplateGenerator(newIndex);
     console.log(success);
     if (success)
-        uncollapsedGeneratorIndex += direction;
+        uncollapsedGeneratorIndex = newIndex;
 });
 setUncollapsedBoilerplateGenerator(uncollapsedGeneratorIndex);
 setInterval(() => document.body.classList.toggle('cursor'), 500);

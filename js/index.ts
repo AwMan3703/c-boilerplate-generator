@@ -236,7 +236,7 @@ window.addEventListener('keydown', e => {
     console.log(newIndex)
     const success = setUncollapsedBoilerplateGenerator(newIndex)
     console.log(success)
-    if (success) uncollapsedGeneratorIndex += direction
+    if (success) uncollapsedGeneratorIndex = newIndex
 })
 
 setUncollapsedBoilerplateGenerator(uncollapsedGeneratorIndex)
