@@ -229,14 +229,11 @@ window.addEventListener('keydown', e => {
         return;
     const boilerplateGeneratorsList = boilerplateGenerators();
     let newIndex = uncollapsedGeneratorIndex + direction;
-    console.log(newIndex);
     if (newIndex < 0)
         newIndex = boilerplateGeneratorsList.length - 1;
     else if (newIndex > boilerplateGeneratorsList.length - 1)
         newIndex = 0;
-    console.log(newIndex);
     const success = setUncollapsedBoilerplateGenerator(newIndex);
-    console.log(success);
     if (success)
         uncollapsedGeneratorIndex = newIndex;
 });
