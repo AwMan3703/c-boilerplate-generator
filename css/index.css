@@ -58,10 +58,19 @@ select {
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 2.5em;
+}
+.boilerplate-generator.collapsed :not(.boilerplate-generator-title) {
+  display: none;
 }
 .boilerplate-generator-title {
+  cursor: pointer;
   margin-block: 0.5em;
+}
+.boilerplate-generator:not(.collapsed) .boilerplate-generator-title {
+  color: darkorange;
+  background-color: darkblue;
+  padding: 0.5em;
+  border-radius: 0.5em;
 }
 .boilerplate-generator hr {
   margin-block: 1.2em;

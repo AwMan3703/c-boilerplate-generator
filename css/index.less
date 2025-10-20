@@ -4,11 +4,19 @@
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	gap: @gap-max;
 }
 
+.boilerplate-generator.collapsed :not(.boilerplate-generator-title) { display: none }
+
 .boilerplate-generator-title {
+	cursor: pointer;
 	margin-block: .5em;
+}
+.boilerplate-generator:not(.collapsed) .boilerplate-generator-title {
+	color: @color-accent;
+	background-color: @color-main;
+	padding: @gap-min;
+	border-radius: @gap-min;
 }
 
 .boilerplate-generator hr { margin-block: 1.2em; }

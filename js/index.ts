@@ -185,21 +185,59 @@ const generators: BoilerplateGenerator[] = [
         }
     }
 ]
+
+
+// FUNCTIONS
+
+function collapseAllBoilerplateGenerators() {
+    const uncollapsedElements = boilerplateGeneratorsParent.querySelectorAll('.boilerplate-generator:not(.collapsed)')
+    uncollapsedElements.forEach(uncollapsed => uncollapsed.classList.add('collapsed'))
+}
+
+function setUncollapsedBoilerplateGenerator(index: number): boolean {
+    collapseAllBoilerplateGenerators()
+    const target = boilerplateGeneratorsParent.querySelector(`.boilerplate-generator[data-index="${index}"]`)
+    target?.classList.remove('collapsed')
+    return !!target && !target.classList.contains('collapsed')
 }
 
 
 // SCRIPT
 
-boilerplateGeneratorsParent?.appendChild(makeBoilerplateGeneratorHTML(compile_command_generator))
-boilerplateGeneratorsParent?.appendChild(makeBoilerplateGeneratorHTML(c_boilerplate_generator))
 let generatorIndex = 0
+let uncollapsedGeneratorIndex = 0
+
 generators.forEach(g => {
     const generatorHTML = makeBoilerplateGeneratorHTML(g)
     const thisIndex = generatorIndex
     generatorHTML.dataset.index = `${thisIndex}`
+    generatorHTML.querySelector('.boilerplate-generator-title')?.addEventListener('click', _ => {
+        setUncollapsedBoilerplateGenerator(thisIndex)
+        uncollapsedGeneratorIndex = thisIndex
+    })
     boilerplateGeneratorsParent.appendChild(generatorHTML)
     generatorIndex++
 })
 
+window.addEventListener('keydown', e => {
+    let direction
+    if (e.key === 'ArrowUp' || e.keyCode === 38)
+        direction = -1
+    else if (e.key === 'ArrowDown' || e.keyCode === 40)
+        direction = 1
+    else
+        return
 
+    const boilerplateGeneratorsList = boilerplateGenerators()
+    let newIndex = uncollapsedGeneratorIndex + direction
+    console.log(newIndex)
+    if (newIndex < 0) newIndex = boilerplateGeneratorsList.length - 1
+    else if (newIndex > boilerplateGeneratorsList.length - 1) newIndex = 0
+    console.log(newIndex)
+    const success = setUncollapsedBoilerplateGenerator(newIndex)
+    console.log(success)
+    if (success) uncollapsedGeneratorIndex += direction
+})
+
+setUncollapsedBoilerplateGenerator(uncollapsedGeneratorIndex)
 setInterval(() => document.body.classList.toggle('cursor'), 500)
