@@ -13,14 +13,16 @@ const getBoilerplateGeneratorInputSecondaryId = (input) => `${getBoilerplateGene
 const getBoilerplateGeneratorInputDependentsWrapperId = (input) => `${getBoilerplateGeneratorInputId(input)}-dependent`;
 function applyPreset(preset, generator) {
     generator.inputs.forEach(input => {
-        if (!preset.inputs[input.id])
+        if (typeof preset === 'object' && !preset.inputs[input.id])
             return;
         const e = document.querySelector(`#${getBoilerplateGeneratorInputId(input)}`);
         if (!e)
             return;
         const c = e.querySelector('input[type="checkbox"]');
-        c.checked = preset.inputs[input.id].checked;
+        c.checked = preset === 'UNCHECK-ALL' ? false : preset.inputs[input.id].checked;
         c.dispatchEvent(new Event('change', { bubbles: true }));
+        if (preset === 'UNCHECK-ALL')
+            return;
         const secondaryInput = e.querySelector('label > .secondary-input');
         if (preset.inputs[input.id].value !== undefined && preset.inputs[input.id].value !== null && !!secondaryInput) {
             secondaryInput.value = preset.inputs[input.id].value;
@@ -61,7 +63,11 @@ function updateBoilerplateOutput(form, outputElement, generator) {
 }
 function makeBoilerplateGeneratorPresetButtonHTML(preset, generator) {
     const e = boilerplateGeneratorPresetButtonTemplate.content.cloneNode(true).firstChild;
-    e.innerText = preset.label;
+    if (preset === 'UNCHECK-ALL') {
+        e.innerText = '✕';
+    }
+    else
+        e.innerText = preset.label;
     e.addEventListener('click', _ => applyPreset(preset, generator));
     return e;
 }
@@ -137,6 +143,8 @@ function makeBoilerplateGeneratorHTML(generator) {
         navigator.clipboard.writeText(outputElement.innerText).then(r => temporaryText(copyOutputButtonElement, !!outputElement.innerText ? 'Copiato!' : 'Nulla da copiare!'));
     });
     copyOutputButtonElement.innerText = generator.copy_button_label || 'Copia output';
+    if (!!generator.presets && generator.presets.length > 0)
+        presetButtonsListElement.appendChild(makeBoilerplateGeneratorPresetButtonHTML('UNCHECK-ALL', generator));
     (_a = generator.presets) === null || _a === void 0 ? void 0 : _a.forEach(preset => presetButtonsListElement.appendChild(makeBoilerplateGeneratorPresetButtonHTML(preset, generator)));
     generator.inputs.forEach(input => formElement.appendChild(makeBoilerplateGeneratorInputHTML(input)));
     formElement.addEventListener('change', _ => updateBoilerplateOutput(formElement, outputElement, generator));

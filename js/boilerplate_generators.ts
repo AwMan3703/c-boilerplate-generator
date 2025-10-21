@@ -103,16 +103,18 @@ const getBoilerplateGeneratorInputLabelId = (input: BoilerplateGeneratorInput) =
 const getBoilerplateGeneratorInputSecondaryId = (input: BoilerplateGeneratorInput) => `${getBoilerplateGeneratorInputId(input)}-secondary`
 const getBoilerplateGeneratorInputDependentsWrapperId = (input: BoilerplateGeneratorInput) => `${getBoilerplateGeneratorInputId(input)}-dependent`
 
-function applyPreset(preset: BoilerplateGeneratorPreset, generator: BoilerplateGenerator) {
+function applyPreset(preset: BoilerplateGeneratorPreset | 'UNCHECK-ALL', generator: BoilerplateGenerator) {
     generator.inputs.forEach(input => {
-        if (!preset.inputs[input.id]) return
+        if (typeof preset === 'object' && !preset.inputs[input.id]) return
 
         const e = document.querySelector(`#${getBoilerplateGeneratorInputId(input)}`) as HTMLElement
         if (!e) return
         const c = e.querySelector('input[type="checkbox"]') as HTMLInputElement
 
-        c.checked = preset.inputs[input.id].checked
+        c.checked = preset === 'UNCHECK-ALL' ? false : preset.inputs[input.id].checked
         c.dispatchEvent(new Event('change', {bubbles: true}))
+
+        if (preset === 'UNCHECK-ALL') return
 
         const secondaryInput = e.querySelector('label > .secondary-input') as HTMLInputElementExtended
         if (preset.inputs[input.id].value !== undefined && preset.inputs[input.id].value !== null && !!secondaryInput) {
@@ -157,10 +159,14 @@ function updateBoilerplateOutput(form: HTMLFormElement, outputElement: HTMLEleme
     outputElement.innerText = generator.generator_fn(values)
 }
 
-function makeBoilerplateGeneratorPresetButtonHTML(preset: BoilerplateGeneratorPreset, generator: BoilerplateGenerator) {
+function makeBoilerplateGeneratorPresetButtonHTML(preset: BoilerplateGeneratorPreset | 'UNCHECK-ALL', generator: BoilerplateGenerator) {
     const e = (boilerplateGeneratorPresetButtonTemplate.content.cloneNode(true) as HTMLTemplateElement).firstChild as HTMLButtonElement
 
-    e.innerText = preset.label
+    if (preset === 'UNCHECK-ALL') {
+        e.innerText = '✕'
+    } else
+        e.innerText = preset.label
+
     e.addEventListener('click', _ => applyPreset(preset, generator))
 
     return e
@@ -248,6 +254,7 @@ function makeBoilerplateGeneratorHTML(generator: BoilerplateGenerator) {
     })
     copyOutputButtonElement.innerText = generator.copy_button_label || 'Copia output'
 
+    if (!!generator.presets && generator.presets.length > 0) presetButtonsListElement.appendChild(makeBoilerplateGeneratorPresetButtonHTML('UNCHECK-ALL', generator))
     generator.presets?.forEach(preset => presetButtonsListElement.appendChild(makeBoilerplateGeneratorPresetButtonHTML(preset, generator)))
 
     generator.inputs.forEach(input => formElement.appendChild(makeBoilerplateGeneratorInputHTML(input)))
