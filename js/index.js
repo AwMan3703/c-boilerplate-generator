@@ -214,6 +214,71 @@ const generators = [
             code.push(`}`);
             return code.join('\n');
         }
+    }, {
+        label: 'Iterazione',
+        copy_button_label: 'Copia codice',
+        inputs: [
+            {
+                id: 'i-iterator-variable',
+                label: 'Variabile iterativa',
+                input_type: "text",
+                attributes: { 'placeholder': 'i', 'value': 'i' },
+                checked: true,
+                disabled: true
+            }, {
+                id: 'i-exec-condition',
+                label: 'Condizione di esecuzione',
+                input_type: "text",
+                attributes: { 'placeholder': 'i < MAX' },
+                checked: true
+            }, {
+                id: 'i-final-expression',
+                label: 'Espressione finale',
+                input_type: "text",
+                attributes: { 'placeholder': 'i++' },
+                checked: true
+            }, {
+                id: 'i-array-name',
+                label: 'Itera su array',
+                input_type: 'text',
+                attributes: { 'placeholder': 'arr' },
+                dependents: [{
+                        id: 'i-array-type',
+                        label: 'Tipo dell\'array',
+                        input_type: 'select',
+                        options: { 'Interi (int)': 'int', 'Decimali (float)': 'float', 'Decimali (double)': 'double', 'Caratteri (char)': 'char' },
+                        checked: true,
+                        disabled: true
+                    }, {
+                        id: 'i-extract-current-element',
+                        label: 'Estrai l\'elemento del ciclo in una variabile'
+                    }]
+            }
+        ],
+        generator_fn: formValues => {
+            var _a;
+            const iteratorVariableInput = formValues['i-iterator-variable'].input;
+            adaptTextInputToValueLength(iteratorVariableInput);
+            const arrayNameInput = formValues['i-array-name'].input;
+            adaptTextInputToValueLength(arrayNameInput);
+            const executionConditionInput = formValues['i-exec-condition'].input;
+            adaptTextInputToValueLength(executionConditionInput);
+            const finalExpressionInput = formValues['i-final-expression'].input;
+            adaptTextInputToValueLength(finalExpressionInput);
+            const defaultIteratorVariable = 'i';
+            const iteratorVariable = iteratorVariableInput.value || defaultIteratorVariable;
+            const code = [];
+            code.push(`for (` +
+                `${iteratorVariable}=0 ; ` +
+                `${formValues['i-exec-condition'].checkbox.checked ? executionConditionInput.value : ''} ; ` +
+                `${formValues['i-final-expression'].checkbox.checked ? (finalExpressionInput.value || `${iteratorVariable}++`) : ''}) {`);
+            if (formValues['i-extract-current-element'].checkbox.checked) {
+                code.push(`\t${(_a = formValues['i-array-type'].input) === null || _a === void 0 ? void 0 : _a.value} e = ${arrayNameInput.value || 'arr'}[${iteratorVariable}];`);
+            }
+            code.push(`\t`);
+            code.push(`}`);
+            return code.join('\n');
+        }
     }
 ];
 // FUNCTIONS
