@@ -157,16 +157,37 @@ const generators = [
         inputs: [
             {
                 id: 'i-initial-comment',
-                label: 'Commento iniziale'
+                label: 'Commento iniziale',
+                token: '/* */'
             }, {
                 id: 'i-include-stdio',
-                label: 'Includi <stdio.h>'
+                label: 'Includi <stdio.h>',
+                token: '#include <stdio.h>'
             }, {
                 id: 'i-include-stdlib',
-                label: 'Includi <stdlib.h>'
+                label: 'Includi <stdlib.h>',
+                token: '#include <stdlib.h>'
+            }, {
+                id: 'i-add-i-variable',
+                label: 'Aggiungi variabile iterativa',
+                token: 'int i;'
             }, {
                 id: 'i-return-zero',
-                label: 'Restituisci 0'
+                label: 'Restituisci zero',
+                token: 'return 0;',
+                checked: true
+            }
+        ],
+        presets: [
+            {
+                label: 'Esercizio università',
+                inputs: {
+                    'i-initial-comment': { checked: true },
+                    'i-include-stdio': { checked: true },
+                    'i-include-stdlib': { checked: false },
+                    'i-add-i-variable': { checked: false },
+                    'i-return-zero': { checked: true }
+                }
             }
         ],
         generator_fn: formValues => {
@@ -185,6 +206,8 @@ const generators = [
                 code.push(``);
             // Main function body
             code.push(`int main(int argc, char * argv[]) {`);
+            if (formValues['i-add-i-variable'].checkbox.checked)
+                code.push(`\tint i;`);
             code.push(`\t`);
             if (formValues['i-return-zero'].checkbox.checked)
                 code.push(`\treturn 0;`);
