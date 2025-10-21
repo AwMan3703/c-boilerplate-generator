@@ -250,7 +250,7 @@ function makeBoilerplateGeneratorHTML(generator: BoilerplateGenerator) {
     if (generator.terminal_output) outputElement.classList.add('terminal')
 
     copyOutputButtonElement.addEventListener('click', _ => {
-        navigator.clipboard.writeText(outputElement.innerText).then(r => temporaryText(copyOutputButtonElement, !!outputElement.innerText ? 'Copiato!' : 'Nulla da copiare!'))
+        navigator.clipboard.writeText(outputElement.innerText).then(_ => temporaryText(copyOutputButtonElement, !!outputElement.innerText ? 'Copiato!' : 'Nulla da copiare!'))
     })
     copyOutputButtonElement.innerText = generator.copy_button_label || 'Copia output'
 
