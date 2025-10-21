@@ -19,29 +19,29 @@ const generators: BoilerplateGenerator[] = [
         inputs: [
             {
                 id: 'i-platform',
+                label: 'Piattaforma',
                 input_type: "select",
                 options: {'macOS':'macos','Linux & WSL':'linux','[DISABLED]Windows':'windows'},
-                label: 'Piattaforma',
                 checked: true,
                 disabled: true
             }, {
                 id: 'i-use-compiler',
+                label: 'Compiler',
                 input_type: "select",
                 options: {'GCC':'gcc','[DISABLED]CLang':'clang'},
-                label: 'Compiler',
                 checked: true,
                 disabled: true
             }, {
                 id: 'i-source-path',
-                input_type: "text",
                 label: 'Percorso codice sorgente',
+                input_type: "text",
                 attributes: {'placeholder':'relativo a cwd'},
                 checked: true,
                 disabled: true
             }, {
                 id: 'i-output-path',
-                input_type: "text",
                 label: 'Percorso eseguibile',
+                input_type: "text",
                 token: '-o',
                 attributes: {'placeholder':'relativo a cwd'}
             }, {
@@ -81,7 +81,6 @@ const generators: BoilerplateGenerator[] = [
                 }]
             },
         ],
-
         generator_fn: formValues => {
             // FORM FEEDBACK
             const sourcePathInput = formValues['i-source-path'].input as HTMLInputElement
