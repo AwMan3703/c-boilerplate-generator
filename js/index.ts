@@ -107,6 +107,8 @@ const generators: BoilerplateGenerator[] = [
             }
             adaptTextInputToValueLength(outputPathInput)
 
+            const executablePath = formValues['i-output-path'].input?.value ? formValues['i-output-path'].input?.value : COMPILER_INFO.default_output_filename
+
             // BUILD COMMAND
             const command: string[] = []
 
@@ -130,11 +132,11 @@ const generators: BoilerplateGenerator[] = [
                     command.push('&&')
                 }
                 // Run
-                command.push(`${formValues['i-output-path'].input?.value ? formValues['i-output-path'].input?.value : COMPILER_INFO.default_output_filename}`)
+                command.push(`${executablePath.startsWith('./') ? executablePath : `./${executablePath}`}`)
                 command.push('&&')
                 // Delete
                 if (formValues['i-delete-after-running'].checkbox.checked) {
-                    command.push(`rm ${formValues['i-output-path'].input?.value ? formValues['i-output-path'].input?.value : COMPILER_INFO.default_output_filename}`)
+                    command.push(`rm ${executablePath}`)
                     command.push('&&')
                 }
             }

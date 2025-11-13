@@ -78,7 +78,7 @@ const generators = [
             },
         ],
         generator_fn: formValues => {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+            var _a, _b, _c, _d, _e, _f, _g;
             // FORM FEEDBACK
             const sourcePathInput = formValues['i-source-path'].input;
             if (!sourcePathInput.value || sourcePathInput.value === '' || sourcePathInput.value === SOURCE_CODE_EXTENSION) {
@@ -105,22 +105,23 @@ const generators = [
                 outputPathCheckbox.checked = true;
             }
             adaptTextInputToValueLength(outputPathInput);
+            const executablePath = ((_a = formValues['i-output-path'].input) === null || _a === void 0 ? void 0 : _a.value) ? (_b = formValues['i-output-path'].input) === null || _b === void 0 ? void 0 : _b.value : COMPILER_INFO.default_output_filename;
             // BUILD COMMAND
             const command = [];
             // Compiler command
-            command.push(`${(_a = formValues['i-use-compiler'].input) === null || _a === void 0 ? void 0 : _a.value}`);
+            command.push(`${(_c = formValues['i-use-compiler'].input) === null || _c === void 0 ? void 0 : _c.value}`);
             // if no source path is specified, return just this
             if (!sourcePathInput.value)
                 return command.join(' ');
             // Compiler options
             else
                 command.push(`${sourcePathInput.value}`);
-            if (formValues['i-output-path'].checkbox.checked && ((_b = formValues['i-output-path'].input) === null || _b === void 0 ? void 0 : _b.value) && ((_c = formValues['i-output-path'].input) === null || _c === void 0 ? void 0 : _c.value) !== COMPILER_INFO.default_output_filename)
-                command.push(`-o ${(_d = formValues['i-output-path'].input) === null || _d === void 0 ? void 0 : _d.value}`);
+            if (formValues['i-output-path'].checkbox.checked && ((_d = formValues['i-output-path'].input) === null || _d === void 0 ? void 0 : _d.value) && ((_e = formValues['i-output-path'].input) === null || _e === void 0 ? void 0 : _e.value) !== COMPILER_INFO.default_output_filename)
+                command.push(`-o ${(_f = formValues['i-output-path'].input) === null || _f === void 0 ? void 0 : _f.value}`);
             if (formValues['i-verbose-output'].checkbox.checked)
                 command.push(`-v`);
             if (formValues['i-standard'].checkbox.checked)
-                command.push(`-std=${(_e = formValues['i-standard'].input) === null || _e === void 0 ? void 0 : _e.value}`);
+                command.push(`-std=${(_g = formValues['i-standard'].input) === null || _g === void 0 ? void 0 : _g.value}`);
             if (formValues['i-all-warnings'].checkbox.checked)
                 command.push(`-Wall`);
             if (formValues['i-pedantic'].checkbox.checked) {
@@ -138,11 +139,11 @@ const generators = [
                     command.push('&&');
                 }
                 // Run
-                command.push(`${((_f = formValues['i-output-path'].input) === null || _f === void 0 ? void 0 : _f.value) ? (_g = formValues['i-output-path'].input) === null || _g === void 0 ? void 0 : _g.value : COMPILER_INFO.default_output_filename}`);
+                command.push(`${executablePath.startsWith('./') ? executablePath : `./${executablePath}`}`);
                 command.push('&&');
                 // Delete
                 if (formValues['i-delete-after-running'].checkbox.checked) {
-                    command.push(`rm ${((_h = formValues['i-output-path'].input) === null || _h === void 0 ? void 0 : _h.value) ? (_j = formValues['i-output-path'].input) === null || _j === void 0 ? void 0 : _j.value : COMPILER_INFO.default_output_filename}`);
+                    command.push(`rm ${executablePath}`);
                     command.push('&&');
                 }
             }
